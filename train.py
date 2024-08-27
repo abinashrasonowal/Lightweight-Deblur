@@ -1,11 +1,18 @@
-import torch.optim as optim
-from models import UNet
-import torch.nn as nn
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
+from torchvision.datasets import STL10
 import torch
-from torch.utils.data import DataLoader, Dataset
+import torch.nn as nn
+from models import UNet
 from loader import DeblurDataset
+import torch.optim as optim
 
-dataset = DeblurDataset()
+
+stl10_train = STL10(root='./data', split='train', download=True)
+
+images = [img for img, _ in stl10_train]
+
+dataset = DeblurDataset(images)
 
 model = UNet()
 criterion = nn.MSELoss()
@@ -40,3 +47,7 @@ def train_model(model, dataloader, criterion, optimizer, num_epochs=25):
 dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
 
 trained_model = train_model(model, dataloader, criterion, optimizer, num_epochs=25)
+
+# Save the model
+torch.save(trained_model.state_dict(), 'unet_model_withresnet.pth')
+print(f"Model saved")

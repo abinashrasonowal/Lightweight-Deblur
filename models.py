@@ -10,11 +10,11 @@ class UNet(nn.Module):
 
         self.bottleneck = self.conv_block(256, 512)
 
-        self.upconv3 = self.upconv_block(512, 256, 256)
-        self.upconv2 = self.upconv_block(512, 128, 128)
-        self.upconv1 = self.upconv_block(256, 64, 64)
-        self.final_conv = nn.Conv2d(128, 1, kernel_size=1)
-    
+        self.upconv3 = self.upconv_block(512, 256)
+        self.upconv2 = self.upconv_block(512, 128)
+        self.upconv1 = self.upconv_block(256, 64)
+        self.final_conv = nn.Conv2d(128, 3, kernel_size=1)
+
     def conv_block(self, in_channels, out_channels):
         return nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
@@ -22,33 +22,49 @@ class UNet(nn.Module):
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.ReLU(inplace=True)
         )
-    
-    def upconv_block(self, in_channels, mid_channels, out_channels):
+
+    def upconv_block(self, in_channels, out_channels):
         return nn.Sequential(
-            nn.ConvTranspose2d(in_channels, mid_channels, kernel_size=2, stride=2),
+            nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2),
             nn.ReLU(inplace=True),
-            nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.ReLU(inplace=True)
         )
-    
+
     def forward(self, x):
         c1 = self.encoder1(x)
         p1 = nn.MaxPool2d(kernel_size=2, stride=2)(c1)
+        # print(p1.shape)
+
         c2 = self.encoder2(p1)
         p2 = nn.MaxPool2d(kernel_size=2, stride=2)(c2)
+        # print(p2.shape)
+
         c3 = self.encoder3(p2)
         p3 = nn.MaxPool2d(kernel_size=2, stride=2)(c3)
+        # print(p3.shape)
+
         bn = self.bottleneck(p3)
+        # print(bn.shape)
+
         u3 = self.upconv3(bn)
         u3 = torch.cat([u3, c3], dim=1)
-        u2 = self.upconv2(u3)
-        u2 = torch.cat([u2, c2], dim=1)
-        u1 = self.upconv1(u2)
-        u1 = torch.cat([u1, c1], dim=1)
-        output = self.final_conv(u1)
-        return output
+        # print(u3.shape)
 
-model = UNet().cuda()
-print(model)
+        u2 = self.upconv2(u3)
+        # print(u2.shape)
+        u2 = torch.cat([u2, c2], dim=1)
+        # print(u2.shape)
+
+        u1 = self.upconv1(u2)
+        # print(u1.shape)
+        u1 = torch.cat([u1, c1], dim=1)
+        # print(u1.shape)
+
+        output = self.final_conv(u1)
+        return output + x
+
+# model = UNet().to(device)
+# print(model)
