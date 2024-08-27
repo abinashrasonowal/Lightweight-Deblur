@@ -11,9 +11,15 @@ class UNet(nn.Module):
         self.bottleneck = self.conv_block(256, 512)
 
         self.upconv3 = self.upconv_block(512, 256)
-        self.upconv2 = self.upconv_block(512, 128)
-        self.upconv1 = self.upconv_block(256, 64)
-        self.final_conv = nn.Conv2d(128, 3, kernel_size=1)
+        self.follow_conv3 = self.conv_block(512, 256)
+
+        self.upconv2 = self.upconv_block(256, 128)
+        self.follow_conv2 = self.conv_block(256, 128)
+
+        self.upconv1 = self.upconv_block(128, 64)
+        self.follow_conv1 = self.conv_block(128, 64)
+
+        self.final_conv = nn.Conv2d(64, 3, kernel_size=1)
 
     def conv_block(self, in_channels, out_channels):
         return nn.Sequential(
@@ -25,12 +31,7 @@ class UNet(nn.Module):
 
     def upconv_block(self, in_channels, out_channels):
         return nn.Sequential(
-            nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True)
+            nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
         )
 
     def forward(self, x):
@@ -50,18 +51,24 @@ class UNet(nn.Module):
         # print(bn.shape)
 
         u3 = self.upconv3(bn)
+        print(u3.shape)
         u3 = torch.cat([u3, c3], dim=1)
-        # print(u3.shape)
+        print(u3.shape)
+        u3 = self.follow_conv3(u3)
+        print(u3.shape)
 
         u2 = self.upconv2(u3)
-        # print(u2.shape)
+        print(u2.shape)
         u2 = torch.cat([u2, c2], dim=1)
-        # print(u2.shape)
+        print(u2.shape)
+        u2 = self.follow_conv2(u2)
+        print(u2.shape)
 
         u1 = self.upconv1(u2)
-        # print(u1.shape)
+        print(u1.shape)
         u1 = torch.cat([u1, c1], dim=1)
-        # print(u1.shape)
+        u1 = self.follow_conv1(u1)
+        print("u1 ",u1.shape)
 
         output = self.final_conv(u1)
         return output + x
