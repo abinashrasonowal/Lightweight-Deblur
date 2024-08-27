@@ -37,38 +37,26 @@ class UNet(nn.Module):
     def forward(self, x):
         c1 = self.encoder1(x)
         p1 = nn.MaxPool2d(kernel_size=2, stride=2)(c1)
-        # print(p1.shape)
 
         c2 = self.encoder2(p1)
         p2 = nn.MaxPool2d(kernel_size=2, stride=2)(c2)
-        # print(p2.shape)
 
         c3 = self.encoder3(p2)
         p3 = nn.MaxPool2d(kernel_size=2, stride=2)(c3)
-        # print(p3.shape)
 
         bn = self.bottleneck(p3)
-        # print(bn.shape)
 
         u3 = self.upconv3(bn)
-        print(u3.shape)
         u3 = torch.cat([u3, c3], dim=1)
-        print(u3.shape)
         u3 = self.follow_conv3(u3)
-        print(u3.shape)
 
         u2 = self.upconv2(u3)
-        print(u2.shape)
         u2 = torch.cat([u2, c2], dim=1)
-        print(u2.shape)
         u2 = self.follow_conv2(u2)
-        print(u2.shape)
 
         u1 = self.upconv1(u2)
-        print(u1.shape)
         u1 = torch.cat([u1, c1], dim=1)
         u1 = self.follow_conv1(u1)
-        print("u1 ",u1.shape)
 
         output = self.final_conv(u1)
         return output + x
