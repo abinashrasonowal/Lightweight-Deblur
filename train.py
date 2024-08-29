@@ -1,18 +1,57 @@
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
-from torchvision.datasets import STL10
 import torch
 import torch.nn as nn
 from models import UNet
-from loader import DeblurDataset
+from loader import MyData
 import torch.optim as optim
+import os
+import cv2
+import pandas as pd
 
+path_to_dir = '.'
 
-stl10_train = STL10(root='./data', split='train', download=True)
+img_names = {}
+sharp = []
 
-images = [img for img, _ in stl10_train]
+# Define image extensions you want to check for
+image_extensions = {'.png', '.jpg', '.jpeg'}
 
-dataset = DeblurDataset(images)
+for img in os.listdir(path_to_dir + '/data/sharp'):
+    # Get the file extension
+    _, ext = os.path.splitext(img)
+    # Check if the extension is in the list of image extensions
+    if ext.lower() in image_extensions:
+        sharp.append(img)
+
+img_names['sharp'] = sharp
+
+df=pd.DataFrame(img_names)
+
+i = 0
+invalid_indices = []
+
+for index, image_name in enumerate(df['sharp']):
+    path_ = os.path.join(path_to_dir, 'data/sharp', image_name)
+    try:
+        img = cv2.imread(path_)
+        if img is None:
+            raise ValueError("Image not loaded, possibly due to unsupported format or missing file.")
+    except Exception as e:
+        print(f"Error loading image {path_}: {e}")
+        invalid_indices.append(index)
+        i += 1
+
+# Remove invalid rows from DataFrame
+df_cleaned = df.drop(index=invalid_indices).reset_index(drop=True)
+
+print(f"Number of invalid images: {i}")
+
+train_df=df_cleaned[:350]
+
+train_data = MyData(train_df,path_to_dir+'/data/sharp')
+
+train_loader = DataLoader(train_data,batch_size=10,shuffle=True)
 
 model = UNet()
 criterion = nn.MSELoss()
@@ -44,9 +83,8 @@ def train_model(model, dataloader, criterion, optimizer, num_epochs=25):
     
     return model
 
-dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
 
-trained_model = train_model(model, dataloader, criterion, optimizer, num_epochs=25)
+trained_model = train_model(model, train_loader, criterion, optimizer, num_epochs=25)
 
 # Save the model
 torch.save(trained_model.state_dict(), 'unet_model_withresnet.pth')
