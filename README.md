@@ -5,7 +5,7 @@ This repository contains the code and resources for the lightweight deblurring m
 ### Datasets
 
 - **Original Dataset**: The dataset used as the base for this project can be found on Kaggle: [Personal Financial Dataset for India](https://www.kaggle.com/datasets/mehaksingal/personal-financial-dataset-for-india).
-- **Edited Dataset**: The edited version, prepared for training the model, is available [here](#). *(Replace `#` with the actual link to your edited dataset.)*
+- **Edited Dataset**: The edited version, prepared for training the model, is available [(https://drive.google.com/file/d/1fj-yT0GA304MV7zxxnPNaHSjiaALWj73/view?usp=sharing)](#).
 
 ### Description
 
